@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VES Site Interpreter Pro</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1a1a1a; --muted:#5f6b7a;
+    --accent:#0b6e4f; --accent2:#0a4d6e; --warn:#c0392b; --line:#dfe5ea;
+    --btn-ink:#ffffff; --flag:#e74c3c; --ok:#0b6e4f;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{touch-action:manipulation;}
+  input,select,textarea,button{touch-action:manipulation; pointer-events:auto;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:16px; line-height:1.45;}
+  body.sunlight{--bg:#ffffff; --card:#ffffff; --ink:#000000; --muted:#222222;
+    --accent:#000000; --accent2:#000000; --line:#000000; --btn-ink:#ffffff;}
+  body.sunlight .card{border:2px solid #000;}
+  body.sunlight button{background:#000; color:#fff; border:2px solid #000;}
+  body.sunlight button.ghost{background:#fff; color:#000;}
+  body.sunlight input,body.sunlight select,body.sunlight textarea{border:2px solid #000; font-size:18px;}
+  header{background:linear-gradient(135deg,#0b6e4f,#0a4d6e); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:10;}
+  body.sunlight header{background:#000;}
+  header h1{margin:0; font-size:20px;}
+  header p{margin:2px 0 0; font-size:12px; opacity:.9;}
+  header .row{display:flex; justify-content:space-between; align-items:center;}
+  nav.tabs{display:flex; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:64px; z-index:9; overflow-x:auto;}
+  nav.tabs button{flex:1; min-width:76px; border:none; background:none; color:var(--ink); padding:12px 6px; font-size:13px; border-radius:0; border-bottom:3px solid transparent;}
+  nav.tabs button.active{border-bottom-color:var(--accent); font-weight:700; color:var(--accent);}
+  body.sunlight nav.tabs{top:68px;}
+  main{padding:12px; padding-bottom:60px; max-width:720px; margin:0 auto;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .card h2{margin:0 0 10px; font-size:17px;}
+  .card h3{margin:14px 0 8px; font-size:15px;}
+  label{display:block; font-size:13px; color:var(--muted); margin:10px 0 4px;}
+  input,select,textarea{width:100%; padding:11px 12px; font-size:16px; border:1.5px solid var(--line); border-radius:9px; background:#fff; color:#111;}
+  textarea{min-height:70px; resize:vertical;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  button{background:var(--accent); color:var(--btn-ink); border:none; border-radius:9px; padding:12px 14px; font-size:15px; font-weight:600; cursor:pointer; width:100%; margin-top:10px;}
+  button.ghost{background:#eef2f5; color:var(--ink);}
+  body.sunlight button.ghost{background:#fff;}
+  button.danger{background:var(--warn);}
+  button.small{width:auto; padding:8px 12px; font-size:13px; margin-top:6px;}
+  button.inline{width:auto; display:inline-block; margin:6px 6px 0 0; padding:9px 14px; font-size:14px;}
+  table{width:100%; border-collapse:collapse; font-size:13px; margin-top:8px;}
+  th,td{border:1px solid var(--line); padding:7px 6px; text-align:right;}
+  th{background:#eef4f1; text-align:right; font-size:12px;}
+  body.sunlight th{background:#fff;}
+  td.l,th.l{text-align:left;}
+  tr.flagged td{background:#fdecea;}
+  .badge{display:inline-block; padding:4px 12px; border-radius:20px; font-weight:700; font-size:15px; background:#e8f5ee; color:var(--accent); border:1px solid var(--accent);}
+  .badge.warn{background:#fdecea; color:var(--warn); border-color:var(--warn);}
+  .ai-box{background:#f2f7ff; border:1px solid #bcd3ee; border-radius:10px; padding:12px; margin-top:10px; font-size:14.5px;}
+  body.sunlight .ai-box{background:#fff; border:2px solid #000;}
+  .ai-box .disclaimer{font-size:12px; color:var(--muted); margin-top:8px; font-style:italic;}
+  .pro-box{background:#fdf6ec; border:1px solid #e8cf9f; border-radius:10px; padding:12px; margin-top:10px; font-size:14.5px;}
+  body.sunlight .pro-box{background:#fff; border:2px solid #000;}
+  .pro-box .disclaimer{font-size:12px; color:var(--muted); margin-top:8px; font-style:italic;}
+  canvas.plot{width:100%; height:300px; background:#fff; border:1px solid var(--line); border-radius:10px; touch-action:manipulation;}
+  body.sunlight canvas.plot{border:2px solid #000;}
+  .station-item{display:flex; justify-content:space-between; align-items:center; padding:10px; border:1px solid var(--line); border-radius:9px; margin-bottom:8px; background:#fff;}
+  .station-item.active{border:2px solid var(--accent);}
+  .station-item .meta{font-size:12px; color:var(--muted);}
+  .toast{position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#222; color:#fff; padding:11px 18px; border-radius:24px; font-size:14px; z-index:99; display:none; max-width:92%;}
+  .hint{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  .rec-dot{display:inline-block; width:10px; height:10px; border-radius:50%; background:#ccc; margin-right:6px;}
+  .rec-dot.on{background:#e74c3c; animation:blink 1s infinite;}
+  @keyframes blink{50%{opacity:.3;}}
+  img.preview{max-width:100%; border-radius:9px; margin-top:8px; border:1px solid var(--line);}
+  .mode-row{display:flex; gap:8px; margin-top:8px;}
+  .mode-row button{margin-top:0; flex:1;}
+  .mode-row button.sel{outline:3px solid var(--accent2); outline-offset:-3px;}
+  .kbd-help{font-size:13px; color:var(--muted);}
+  .kbd-help li{margin-bottom:6px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div>
+      <h1>📡 VES Site Interpreter Pro</h1>
+      <p>Dr. Uche Aluge Daniel</p>
+    </div>
+    <button id="btnSun" class="small ghost" style="width:auto;margin:0;" title="Sunlight mode">☀️ Field</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-tab="station" class="active">Station</button>
+  <button data-tab="sounding">Sounding</button>
+  <button data-tab="curve">Curve &amp; AI</button>
+  <button data-tab="map">Map</button>
+  <button data-tab="report">Report</button>
+</nav>
+<main>
+<!-- ============ STATION TAB ============ -->
+<section id="tab-station">
+  <div class="card">
+    <h2>Project</h2>
+    <label>Project name</label>
+    <input id="inpProject" placeholder="e.g. Ikwo Water Scheme 2026">
+    <h3 style="margin-top:14px;">Stations</h3>
+    <div id="stationList"></div>
+    <button id="btnNewStation" class="ghost">＋ New station</button>
+  </div>
+  <div class="card">
+    <h2>Station details</h2>
+    <div class="grid2">
+      <div><label>Station ID</label><input id="inpStName" placeholder="ST-1"></div>
+      <div><label>Date</label><input id="inpDate" type="date"></div>
+    </div>
+    <label>Location / community</label>
+    <input id="inpLocation" placeholder="e.g. Oferekpe, Ikwo LGA">
+    <label>Operator</label>
+    <input id="inpOperator" placeholder="Your name / crew">
+    <div class="grid2">
+      <div><label>Latitude</label><input id="inpLat" inputmode="decimal" placeholder="6.1234"></div>
+      <div><label>Longitude</label><input id="inpLng" inputmode="decimal" placeholder="8.1234"></div>
+    </div>
+    <button id="btnGPS" class="ghost">📍 Capture GPS now</button>
+    <div class="hint" id="gpsHint">GPS needs location permission. You can also type coordinates manually.</div>
+    <label>Site notes</label>
+    <textarea id="taNotes" placeholder="Access, landmarks, nearby boreholes, anything unusual…"></textarea>
+  </div>
+  <div class="card">
+    <h2>🎙️ Voice note</h2>
+    <div><span class="rec-dot" id="recDot"></span><span id="recStatus">No voice note recorded</span></div>
+    <div>
+      <button id="btnRec" class="inline">● Record</button>
+      <button id="btnStopRec" class="inline ghost" disabled>■ Stop</button>
+      <button id="btnPlayNote" class="inline ghost" disabled>▶ Play</button>
+      <button id="btnDelNote" class="inline ghost danger" disabled style="color:#fff;">✕</button>
+    </div>
+    <div class="hint">Describe the site while you look at it — faster than typing in the sun.</div>
+  </div>
+  <div class="card">
+    <h2>📷 Site photo</h2>
+    <input type="file" id="inpPhoto" accept="image/*" capture="environment" style="display:none;">
+    <button id="btnPhoto" class="ghost">Take / choose photo</button>
+    <img id="imgPhotoPreview" class="preview" style="display:none;">
+    <button id="btnClearPhoto" class="ghost danger" style="display:none;color:#fff;">Remove photo</button>
+  </div>
+</section>
+<!-- ============ SOUNDING TAB ============ -->
+<section id="tab-sounding" style="display:none;">
+  <div class="card">
+    <h2>Survey setup</h2>
+    <label>Mode</label>
+    <div class="mode-row">
+      <button id="btnModeSounding" class="sel">📶 Sounding (VES)</button>
+      <button id="btnModeProfiling" class="ghost">📏 Profiling</button>
+    </div>
+    <label>Electrode array</label>
+    <select id="selArray">
+      <option value="schlumberger">Schlumberger</option>
+      <option value="wenner">Wenner</option>
+      <option value="half">Half-Schlumberger</option>
+    </select>
+    <div class="hint" id="arrayHint"></div>
+  </div>
+  <div class="card">
+    <h2>Log a reading</h2>
+    <div id="entryFields" class="grid3"></div>
+    <div class="grid2" style="margin-top:10px;">
+      <div><label>Resistance R = ΔV/I (Ω)</label><input id="inpR" inputmode="decimal" placeholder="e.g. 2.45"></div>
+      <div><label>&nbsp;</label><button id="btnAddReading" style="margin-top:0;">＋ Add reading</button></div>
+    </div>
+    <div class="hint">K (geometric factor) and ρₐ (apparent resistivity) are calculated instantly.</div>
+  </div>
+  <div class="card">
+    <h2>Data matrix</h2>
+    <div class="hint" id="outlierNote"></div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr id="matrixHead"></tr></thead>
+      <tbody id="readingsBody"></tbody>
+    </table>
+    </div>
+  </div>
+</section>
+<!-- ============ CURVE TAB ============ -->
+<section id="tab-curve" style="display:none;">
+  <div class="card">
+    <h2>Apparent resistivity curve</h2>
+    <canvas id="curveCanvas" class="plot"></canvas>
+    <div class="hint">Log–log plot, drawn live as you log readings. Red points were flagged as possible bad data.</div>
+  </div>
+  <div class="card">
+    <h2>🤖 AI field interpreter <span class="badge" id="aiBadge" style="display:none;"></span></h2>
+    <div class="ai-box" id="aiText">Log at least 4 readings and the interpreter will read your curve here — curve type, what the layers are probably doing, and which depth zone deserves attention.</div>
+  </div>
+  <div class="card">
+    <h2>⭐ Pro recommendation <span class="badge" id="proBadge" style="display:none;"></span></h2>
+    <div class="pro-box" id="proText">Log readings on the Sounding tab and the Pro panel will grade your data quality and give a clear recommendation here.</div>
+  </div>
+</section>
+<!-- ============ MAP TAB ============ -->
+<section id="tab-map" style="display:none;">
+  <div class="card">
+    <h2>🗺️ Station map</h2>
+    <canvas id="mapCanvas" class="plot"></canvas>
+    <div class="hint">Relative positions of your GPS-tagged stations. North is up.</div>
+    <div id="stationMapList"></div>
+  </div>
+</section>
+<!-- ============ REPORT TAB ============ -->
+<section id="tab-report" style="display:none;">
+  <div class="card">
+    <h2>📄 Export</h2>
+    <button id="btnCSV">⬇ Download CSV</button>
+    <button id="btnHTML" class="ghost">⬇ Word-ready HTML report</button>
+    <div class="hint">The HTML report opens directly in Microsoft Word — table, curve image, photo and AI interpretation included.</div>
+    <h3>Backup</h3>
+    <button id="btnJSON" class="ghost">⬇ Backup all data (JSON)</button>
+    <input type="file" id="inpImport" accept=".json,application/json" style="display:none;">
+    <button id="btnImport" class="ghost">⬆ Restore from backup</button>
+    <h3 style="color:var(--warn);">Danger zone</h3>
+    <button id="btnClearStation" class="danger">Clear this station's readings</button>
+    <button id="btnClearAll" class="danger">Delete ALL stations</button>
+    <div class="hint" id="exportStatus"></div>
+  </div>
+  <div class="card">
+    <h2>❓ How to use</h2>
+    <ul class="kbd-help">
+      <li><b>Station tab:</b> create a station per sounding point, capture GPS, add a voice note or photo.</li>
+      <li><b>Sounding tab:</b> pick your array, enter spacings + the resistance reading (ΔV/I). K and ρₐ compute automatically. Red rows = suspicious readings — re-sound those points.</li>
+      <li><b>Curve &amp; AI tab:</b> watch your log–log curve grow, read the AI's plain-language take on what the ground is doing, and check the Pro recommendation — a data-quality grade plus a clear drill / extend / resurvey verdict.</li>
+      <li><b>Map tab:</b> see all your stations plotted from their GPS tags.</li>
+      <li><b>Report tab:</b> export CSV for your spreadsheet, or a Word-ready HTML report for the client file.</li>
+      <li>Everything is stored <b>on this device</b> and works fully offline. Back up with the JSON export before clearing browser data.</li>
+    </ul>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+"use strict";
+/* ================================================================
+   VES SITE INTERPRETER PRO — single-file offline field app
+   by Dr. Uche Aluge Daniel
+   ================================================================ */
+/* ---------------- utilities ---------------- */
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (n, d=2) => (n == null || isNaN(n)) ? "—" : Number(n).toFixed(d);
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=> t.style.display = "none", 2600);
+}
+/* ---------------- geophysics core (pure functions) ---------------- */
+function geometricFactor(array, p){
+  if(array === "schlumberger"){
+    const ab2 = +p.ab2, mn2 = +p.mn2;
+    return Math.PI * (ab2*ab2 - mn2*mn2) / (2*mn2);
+  }
+  if(array === "wenner") return 2 * Math.PI * (+p.a);
+  if(array === "half"){
+    const am = +p.am, an = +p.an;
+    return 2 * Math.PI / (1/am - 1/an);
+  }
+  return NaN;
+}
+function xValue(array, p){ // sounding x-axis: current-electrode half spacing
+  if(array === "schlumberger") return +p.ab2;
+  if(array === "wenner") return +p.a;
+  return +p.am;
+}
+function xLabel(array){ return array === "wenner" ? "a (m)" : "AB/2 (m)"; }
+/* Flag readings that jump implausibly vs neighbours (possible bad contact / typo).
+   Iterative: flag the worst offender, re-check the rest, so one wild spike
+   doesn't make its innocent neighbours look bad. */
+function flagOutliers(readings, array, mode){
+  const flags = new Array(readings.length).fill(false);
+  if(mode !== "sounding" || readings.length < 3) return flags;
+  const pts = readings.map((r,i)=>({i, x:xValue(array,r), y:+r.rho}))
+    .filter(p=>p.x>0 && p.y>0 && isFinite(p.y)).sort((a,b)=>a.x-b.x);
+  const TH = 4; // 4x jump vs neighbours earns a re-sound prompt
+  for(;;){
+    const alive = pts.filter(p=>!flags[p.i]);
+    let worst = -1, worstDev = 0;
+    for(let k=1;k<alive.length-1;k++){
+      const gm = Math.sqrt(alive[k-1].y * alive[k+1].y);
+      const r = alive[k].y / gm;
+      const dev = r >= 1 ? r : 1/r;
+      if(dev > worstDev){ worstDev = dev; worst = alive[k].i; }
+    }
+    if(worst >= 0 && worstDev > TH) flags[worst] = true; else break;
+  }
+  return flags;
+}
+/* AI curve interpreter: rule-based, runs fully on-device */
+function classifyCurve(readings, array){
+  const none = { type:"insufficient", badge:null,
+    text:"Log at least 4 readings and I will read your curve here." };
+  const pts = readings.map(r=>({x:xValue(array,r), y:+r.rho}))
+    .filter(p=>p.x>0 && p.y>0 && isFinite(p.y)).sort((a,b)=>a.x-b.x);
+  if(pts.length < 4) return none;
+  const ly = pts.map(p=>Math.log10(p.y));
+  const s = ly.map((v,i)=>{ // light smoothing
+    const a = ly[Math.max(0,i-1)], b = ly[Math.min(ly.length-1,i+1)];
+    return (a+v+b)/3;
+  });
+  const TH = 0.06; // ~15% change counts as a real move
+  const seq = [];
+  for(let i=1;i<s.length;i++){
+    const d = s[i]-s[i-1];
+    const dir = Math.abs(d) < TH ? 0 : Math.sign(d);
+    if(dir !== 0 && (seq.length===0 || seq[seq.length-1] !== dir)) seq.push(dir);
+  }
+  const key = seq.join(",");
+  let type, badge, text;
+  const minIdx = ly.indexOf(Math.min(...ly)), maxIdx = ly.indexOf(Math.max(...ly));
+  const xAt = i => fmt(pts[i].x, 1) + " m";
+  if(key === "-1,1"){
+    type="H"; badge="H-type";
+    text = `<b>Classic H-type curve</b> — resistivity dips then climbs back up. ` +
+      `That dip usually means a <b>conductive layer</b> (water-saturated zone or clay) ` +
+      `sitting between two more resistive layers. The curve bottoms around AB/2 ≈ <b>${xAt(minIdx)}</b> — ` +
+      `that depth zone deserves your closest attention.`;
+  } else if(key === "1,-1"){
+    type="K"; badge="K-type";
+    text = `<b>Classic K-type curve</b> — resistivity rises to a peak then falls. ` +
+      `A <b>resistive layer</b> (dry sand, gravel, or fresh basement rock) is likely embedded ` +
+      `in less resistive material. Peak around AB/2 ≈ <b>${xAt(maxIdx)}</b>.`;
+  } else if(key === "1"){
+    type="A"; badge="A-type";
+    text = `<b>A-type curve</b> — resistivity keeps climbing with spacing. The ground gets ` +
+      `more resistive with depth: you are probably approaching <b>fresh basement</b> (hard rock). ` +
+      `Good news for depth to rock; less promising for shallow water.`;
+  } else if(key === "-1"){
+    type="Q"; badge="Q-type";
+    text = `<b>Q-type curve</b> — resistivity keeps falling. The ground gets more conductive ` +
+      `with depth: thick <b>weathered / clayey overburden</b> (or shale). If water is here, ` +
+      `it likely sits inside that weathered zone.`;
+  } else {
+    type="complex"; badge="Multi-layer";
+    text = `<b>Complex curve</b> — ${seq.length} turning points, so the ground here has ` +
+      `several distinct layers. Treat this as a <b>first look only</b>: run the data through ` +
+      `proper inversion software before concluding anything.`;
+  }
+  return { type, badge, text: text +
+    `<div class="disclaimer">Field guidance only — the interpreter reads curve shape, it does not replace quantitative inversion modelling. Confirm with your desktop interpretation software before drilling decisions.</div>` };
+}
+/* ---------------- Pro recommendation (deterministic, on-device) ----------------
+   Grades the sounding's data quality and turns the curve reading into one
+   clear verdict. Rule-based only: no invented precision, no guarantee of
+   water. All depths are field guidance in the app's usual disclaimer style. */
+function dataQualityScore(readings, array, mode){
+  const flags = flagOutliers(readings, array, mode);
+  const pts = readings.map((r,i)=>({x:xValue(array,r), y:+r.rho, bad:!!flags[i]}))
+    .filter(p=>p.x>0 && p.y>0 && isFinite(p.y)).sort((a,b)=>a.x-b.x);
+  const n = pts.length;
+  const nFlag = pts.filter(p=>p.bad).length;
+  const pctFlagged = n ? Math.round(100*nFlag/n) : 0;
+  const minX = n ? pts[0].x : 0, maxX = n ? pts[n-1].x : 0;
+  const decades = (n>1 && minX>0) ? Math.log10(maxX/minX) : 0;
+  // Count: up to 40 pts (10+ soundings earn full marks, 4 is the bare minimum)
+  const countPts = n>=10 ? 40 : n===9 ? 36 : n===8 ? 32 : n===7 ? 28 :
+                   n===6 ? 24 : n===5 ? 20 : n===4 ? 16 : Math.round(n*4);
+  // Cleanliness: up to 35 pts, lost in proportion to flagged points
+  const flagPts = n ? Math.round(35*(1 - nFlag/n)) : 0;
+  // Spread coverage: up to 25 pts for a wide electrode spread (reads deeper)
+  const spreadPts = n<2 ? 0 : decades>=1.5 ? 25 : decades>=1.2 ? 22 : decades>=1.0 ? 19 :
+                    decades>=0.8 ? 16 : decades>=0.6 ? 13 : decades>=0.4 ? 10 : decades>=0.2 ? 6 : 3;
+  const score = Math.max(0, Math.min(100, countPts + flagPts + spreadPts));
+  const grade = score>=80 ? "A" : score>=65 ? "B" : score>=50 ? "C" : "D";
+  const basis = n===0
+    ? "No valid readings yet, so there is nothing to grade."
+    : `Based on ${n} valid reading${n===1?"":"s"} (${countPts}/40 for count), ` +
+      `${nFlag} flagged point${nFlag===1?"":"s"} — ${pctFlagged}% of the data (${flagPts}/35 for cleanliness), ` +
+      `and an electrode spread of ${fmt(minX,1)} to ${fmt(maxX,1)} m (${spreadPts}/25 for spread coverage). ` +
+      `A wider spread and more clean readings raise the score; flagged points lower it.`;
+  return { score, grade, nValid:n, nFlagged:nFlag, pctFlagged, minX, maxX, decades, basis };
+}
+function proAnalysis(readings, array, mode){
+  const q = dataQualityScore(readings, array, mode || "sounding");
+  const disclaimer = "Field guidance only, not a guarantee of water. Verify on site and confirm with quantitative inversion modelling before drilling.";
+  if(mode && mode !== "sounding"){
+    return { score:q.score, grade:q.grade, basis:q.basis, type:null, verdictCode:"insufficient",
+      verdict:"Not available in profiling mode",
+      reasons:["The Pro recommendation reads VES sounding curves. Switch this station back to Sounding mode and log a sounding to get a verdict."],
+      guidance:"No depth guidance in profiling mode.", disclaimer };
+  }
+  const pts = readings.map(r=>({x:xValue(array,r), y:+r.rho}))
+    .filter(p=>p.x>0 && p.y>0 && isFinite(p.y)).sort((a,b)=>a.x-b.x);
+  if(q.nValid < 4){
+    return { score:q.score, grade:q.grade, basis:q.basis, type:"insufficient", verdictCode:"insufficient",
+      verdict:"Not recommended — not enough data yet",
+      reasons:[`Only ${q.nValid} valid reading${q.nValid===1?"":"s"} logged. At least 4 are needed before any recommendation is responsible, and 8 or more give a curve worth trusting.`],
+      guidance:"Keep sounding: widen the electrode spread step by step and log each reading, then read the Pro panel again.", disclaimer };
+  }
+  const cls = classifyCurve(readings, array);
+  const type = cls.type;
+  const minPt = pts.reduce((a,p)=> p.y<a.y ? p : a, pts[0]);
+  const maxPt = pts.reduce((a,p)=> p.y>a.y ? p : a, pts[0]);
+  const invLow = fmt(q.maxX/3, 0), invHigh = fmt(q.maxX/2, 0);
+  const depthNote = `This spread (largest spacing ${fmt(q.maxX,1)} m) investigates roughly ${invLow}–${invHigh} m deep as a rule of thumb — about one-third to one-half of the largest spacing. To read deeper ground, extend the sounding first.`;
+  let verdict, verdictCode, reasons, guidance;
+  if(q.score < 50 || q.pctFlagged >= 34){
+    verdict = "Caution — resurvey recommended"; verdictCode = "resurvey";
+    reasons = [`Data quality is Grade ${q.grade} (${q.score}/100)${q.pctFlagged ? ` with ${q.pctFlagged}% of readings flagged as suspicious` : ""}. A verdict built on this data could mislead a drilling decision.`,
+      "Re-sound the flagged points (check electrode contact and spacing), add more readings, and widen the spread before deciding."];
+    guidance = depthNote;
+  } else if(type === "H" && q.score >= 65){
+    verdict = "Recommended to drill"; verdictCode = "drill";
+    reasons = [`Classic H-type pattern on Grade ${q.grade} data (${q.score}/100): a conductive (likely water-bearing or clayey) layer sits between more resistive layers — the pattern field crews look for.`,
+      `The curve bottoms around AB/2 ≈ ${fmt(minPt.x,1)} m, marking the depth zone that deserves closest attention.`];
+    guidance = `Suggested focus: plan drilling to reach and test the conductive zone around the ${fmt(minPt.x,1)} m spacing depth. ${depthNote}`;
+  } else if(type === "H"){
+    verdict = "Promising — verify, then drill"; verdictCode = "promising";
+    reasons = [`The H-type shape is encouraging — a conductive layer between resistive layers — but data quality is only Grade ${q.grade} (${q.score}/100).`,
+      "Repeat the deepest and any flagged readings to firm up the curve before committing a rig."];
+    guidance = `If the repeated readings hold the shape, focus on the conductive zone around AB/2 ≈ ${fmt(minPt.x,1)} m. ${depthNote}`;
+  } else if(type === "Q"){
+    verdict = "Promising — extend the sounding / probe deeper"; verdictCode = "promising";
+    reasons = [`Q-type curve on Grade ${q.grade} data (${q.score}/100): resistivity is still falling at the largest spacing, so the conductive weathered zone likely continues deeper than this spread reached.`,
+      "The bottom of that zone has not been seen yet — ending the survey here risks stopping short of the best zone."];
+    guidance = `Extend the spread beyond ${fmt(q.maxX,1)} m if the site allows, then re-read this panel. ${depthNote}`;
+  } else if(type === "A"){
+    verdict = "Not recommended — for shallow groundwater here"; verdictCode = "not-recommended";
+    reasons = [`A-type curve on Grade ${q.grade} data (${q.score}/100): resistivity keeps rising with depth, which usually means fresh basement (hard rock) is approaching.`,
+      "That is good depth-to-rock information, but it is not a promising shallow-water pattern at this spot."];
+    guidance = `If water is the goal, consider a second sounding line nearby rather than drilling this point on this evidence. ${depthNote}`;
+  } else if(type === "K"){
+    verdict = "Caution — verify before drilling"; verdictCode = "verify";
+    reasons = [`K-type curve on Grade ${q.grade} data (${q.score}/100): a resistive layer (dry sand, gravel, or fresh rock) is embedded in less resistive ground, peaking around AB/2 ≈ ${fmt(maxPt.x,1)} m.`,
+      "A resistive layer is not the classic water-bearing pattern, so confirm with a second sounding line or full inversion before committing a rig."];
+    guidance = depthNote;
+  } else {
+    verdict = "Caution — verify before drilling"; verdictCode = "verify";
+    reasons = [`Complex multi-layer curve on Grade ${q.grade} data (${q.score}/100): several distinct layers are present, and a simple verdict would overstate what the shape alone can say.`,
+      "Run this data through proper inversion software, and consider a second sounding line, before any drilling decision."];
+    guidance = depthNote;
+  }
+  return { score:q.score, grade:q.grade, basis:q.basis, type, verdict, verdictCode, reasons, guidance, disclaimer };
+}
+function renderPro(){
+  const st = curStation();
+  const badge = $("proBadge"), box = $("proText");
+  if(!badge || !box) return;
+  if(!st){ badge.style.display="none"; box.textContent = "Create a station first."; return; }
+  const rec = proAnalysis(st.readings, st.array, st.mode);
+  if(st.mode === "sounding" && rec.type !== null){
+    badge.style.display = "inline-block";
+    badge.textContent = `⭐ Grade ${rec.grade} · ${rec.score}/100`;
+    badge.classList.toggle("warn", rec.grade === "D" || rec.verdictCode === "resurvey" || rec.verdictCode === "not-recommended");
+  } else badge.style.display = "none";
+  box.innerHTML = `<b>${esc(rec.verdict)}</b><br>` +
+    rec.reasons.map(r=>esc(r)).join("<br>") +
+    `<br><br><b>Depth guidance:</b> ${esc(rec.guidance)}` +
+    `<div class="hint" style="margin-top:8px;">${esc(rec.basis)}</div>` +
+    `<div class="disclaimer">${esc(rec.disclaimer)}</div>`;
+}
+/* ---------------- state ---------------- */
+const LS_KEY = "vesFieldAssistant.v1";
+let DB = { projectName:"", stations:[], currentStationId:null,
+           settings:{ sunlight:false } };
+let editingId = null; // reading being edited
+function save(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
+  catch(e){ toast("⚠ Device storage is full — export a backup soon!"); }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ const d = JSON.parse(raw); DB = Object.assign(DB, d); DB.settings = Object.assign({sunlight:false}, d.settings||{}); }
+  }catch(e){}
+}
+function curStation(){ return DB.stations.find(s=>s.id===DB.currentStationId) || null; }
+function newStation(){
+  const n = DB.stations.length + 1;
+  return { id:uid(), project:DB.projectName||"", name:"ST-"+n,
+    location:"", operator:"", date:new Date().toISOString().slice(0,10),
+    lat:"", lng:"", siteNotes:"", voiceNote:null, photo:null,
+    array:"schlumberger", mode:"sounding", readings:[] };
+}
+function setStation(id){
+  DB.currentStationId = id; save(); renderAll();
+  const st = curStation();
+  toast(st ? ("Station: " + st.name) : "Station selected");
+}
+/* ---------------- tabs ---------------- */
+function switchTab(name){
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  ["station","sounding","curve","map","report"].forEach(t=>{ $("tab-"+t).style.display = t===name ? "block" : "none"; });
+  if(name==="curve"){ drawCurve(); renderAI(); }
+  if(name==="map"){ drawMap(); renderMapList(); }
+  if(name==="sounding"){ renderEntryFields(); renderMatrix(); }
+}
+/* ---------------- station tab ---------------- */
+function renderStationList(){
+  const box = $("stationList"); box.innerHTML = "";
+  if(!DB.stations.length){ box.innerHTML = '<div class="hint">No stations yet — create your first one.</div>'; return; }
+  DB.stations.forEach(st=>{
+    const div = document.createElement("div");
+    div.className = "station-item" + (st.id===DB.currentStationId ? " active" : "");
+    div.innerHTML = `<div><b>${esc(st.name)}</b> <span class="meta">${esc(st.array)} · ${st.readings.length} readings</span><br><span class="meta">${esc(st.location||"")}${st.lat?(" · "+st.lat+", "+st.lng):""}</span></div>`;
+    const btn = document.createElement("button");
+    btn.className = "small" + (st.id===DB.currentStationId ? "" : " ghost");
+    btn.style.width = "auto"; btn.textContent = st.id===DB.currentStationId ? "● Active" : "Open";
+    btn.onclick = ()=> setStation(st.id);
+    div.appendChild(btn); box.appendChild(div);
+  });
+}
+function renderStationForm(){
+  const st = curStation(); if(!st) return;
+  $("inpStName").value = st.name; $("inpDate").value = st.date||"";
+  $("inpLocation").value = st.location||""; $("inpOperator").value = st.operator||"";
+  $("inpLat").value = st.lat||""; $("inpLng").value = st.lng||"";
+  $("taNotes").value = st.siteNotes||"";
+  $("btnPlayNote").disabled = $("btnDelNote").disabled = !st.voiceNote;
+  $("recStatus").textContent = st.voiceNote ? "Voice note saved ✓" : "No voice note recorded";
+  $("recDot").classList.remove("on");
+  if(st.photo){ $("imgPhotoPreview").src = st.photo; $("imgPhotoPreview").style.display="block"; $("btnClearPhoto").style.display="block"; }
+  else { $("imgPhotoPreview").style.display="none"; $("btnClearPhoto").style.display="none"; }
+  $("selArray").value = st.array;
+  setModeUI(st.mode);
+  renderArrayHint();
+}
+/* ---------------- sounding tab ---------------- */
+const ARRAY_HINTS = {
+  schlumberger: "Schlumberger: current electrodes A,B symmetric about centre; potential electrodes M,N close together at centre. Enter AB/2 and MN/2.",
+  wenner: "Wenner: four electrodes equally spaced. Enter the spacing a.",
+  half: "Half-Schlumberger: one current electrode (B) at “infinity”. Enter AM and AN distances from the near current electrode."
+};
+function renderArrayHint(){ $("arrayHint").textContent = ARRAY_HINTS[$("selArray").value] || ""; }
+function setModeUI(mode){
+  $("btnModeSounding").className = mode==="sounding" ? "sel" : "ghost";
+  $("btnModeProfiling").className = mode==="profiling" ? "sel" : "ghost";
+}
+function spacingFields(array, mode){
+  if(mode==="profiling") return [{k:"dist", label:"Distance along line (m)"}].concat(
+    array==="schlumberger" ? [{k:"ab2",label:"AB/2 (m)"},{k:"mn2",label:"MN/2 (m)"}] :
+    array==="wenner" ? [{k:"a",label:"a (m)"}] :
+    [{k:"am",label:"AM (m)"},{k:"an",label:"AN (m)"}]);
+  if(array==="schlumberger") return [{k:"ab2",label:"AB/2 (m)"},{k:"mn2",label:"MN/2 (m)"}];
+  if(array==="wenner") return [{k:"a",label:"a (m)"}];
+  return [{k:"am",label:"AM (m)"},{k:"an",label:"AN (m)"}];
+}
+function renderEntryFields(){
+  const st = curStation(); const box = $("entryFields"); box.innerHTML = "";
+  if(!st){ box.innerHTML = '<div class="hint">Create a station first.</div>'; return; }
+  spacingFields(st.array, st.mode).forEach(f=>{
+    const d = document.createElement("div");
+    d.innerHTML = `<label>${f.label}</label><input id="fld_${f.k}" inputmode="decimal" placeholder="0">`;
+    box.appendChild(d);
+  });
+  $("inpR").value = "";
+}
+function validateSpacing(st, p){
+  const num = v => v!=="" && isFinite(+v) && +v>0;
+  for(const f of spacingFields(st.array, st.mode)) if(!num(p[f.k]||"")) return "Enter all spacing values (positive numbers).";
+  if(st.array==="schlumberger" && !(+p.mn2 < +p.ab2)) return "MN/2 must be smaller than AB/2.";
+  if(st.array==="half" && !(+p.an > +p.am)) return "AN must be greater than AM.";
+  return null;
+}
+function addReading(){
+  const st = curStation(); if(!st){ toast("Create a station first"); return; }
+  const p = {};
+  spacingFields(st.array, st.mode).forEach(f=>{ const el=$("fld_"+f.k); p[f.k]=el?el.value.trim():""; });
+  const err = validateSpacing(st, p);
+  if(err){ toast("⚠ "+err); return; }
+  const R = parseFloat($("inpR").value);
+  if(!(R>0)){ toast("⚠ Enter the resistance reading R (Ω)."); return; }
+  const K = geometricFactor(st.array, p);
+  if(!(K>0 && isFinite(K))){ toast("⚠ Could not compute K — check spacings."); return; }
+  const rho = K*R;
+  if(editingId){
+    const r = st.readings.find(r=>r.id===editingId);
+    if(r){ Object.assign(r, p, {R, K, rho}); }
+    editingId = null; $("btnAddReading").textContent = "＋ Add reading";
+    toast("Reading updated ✓");
+  } else {
+    st.readings.push(Object.assign({id:uid()}, p, {R, K, rho}));
+    toast("Reading added ✓  ρₐ = " + fmt(rho) + " Ω·m");
+  }
+  save(); renderEntryFields(); renderMatrix();
+}
+function renderMatrix(){
+  const st = curStation();
+  const head = $("matrixHead"), body = $("readingsBody");
+  body.innerHTML = "";
+  if(!st || !st.readings.length){
+    head.innerHTML = ""; body.innerHTML = '<tr><td class="l" colspan="9">No readings yet.</td></tr>';
+    $("outlierNote").textContent = ""; return;
+  }
+  const fields = spacingFields(st.array, st.mode);
+  const cols = (st.mode==="profiling" ? ["#","Dist (m)"] : ["#", xLabel(st.array)])
+    .concat(fields.filter(f=>f.k!=="dist").map(f=>f.label))
+    .concat(["R (Ω)","K","ρₐ (Ω·m)",""]);
+  head.innerHTML = cols.map(c=>`<th class="${c==="#"||c===""?"":"l"}">${c}</th>`).join("");
+  const flags = flagOutliers(st.readings, st.array, st.mode);
+  const nFlag = flags.filter(Boolean).length;
+  $("outlierNote").textContent = nFlag
+    ? `⚠ ${nFlag} reading${nFlag>1?"s":""} look${nFlag>1?"":"s"} suspicious (red) — possible bad electrode contact or typo. Re-sound ${nFlag>1?"those points":"that point"} while you are still on site.`
+    : "";
+  $("outlierNote").style.color = nFlag ? "var(--warn)" : "";
+  const order = st.readings.map((r,i)=>({r,i})).sort((a,b)=>{
+    const xa = st.mode==="profiling" ? +a.r.dist : xValue(st.array,a.r);
+    const xb = st.mode==="profiling" ? +b.r.dist : xValue(st.array,b.r);
+    return xa-xb;
+  });
+  order.forEach(({r,i},n)=>{
+    const tr = document.createElement("tr");
+    if(flags[i]) tr.className = "flagged";
+    const xcell = st.mode==="profiling" ? fmt(r.dist,1) : fmt(xValue(st.array,r),2);
+    let html = `<td>${n+1}</td><td class="l">${xcell}${flags[i]?" ⚠":""}</td>`;
+    fields.filter(f=>f.k!=="dist").forEach(f=>{ html += `<td class="l">${esc(r[f.k])}</td>`; });
+    html += `<td class="l">${fmt(r.R,3)}</td><td class="l">${fmt(r.K,2)}</td><td class="l"><b>${fmt(r.rho,2)}</b></td>`;
+    tr.innerHTML = html;
+    const td = document.createElement("td"); td.className="l"; td.style.whiteSpace="nowrap";
+    const be = document.createElement("button"); be.className="small ghost"; be.textContent="✎"; be.title="Edit";
+    be.onclick = ()=>{ startEdit(i); };
+    const bd = document.createElement("button"); bd.className="small ghost"; bd.textContent="✕"; bd.title="Delete";
+    bd.onclick = ()=>{ if(confirm("Delete this reading?")){ st.readings.splice(i,1); save(); renderMatrix(); } };
+    td.appendChild(be); td.appendChild(bd); tr.appendChild(td);
+    body.appendChild(tr);
+  });
+}
+function startEdit(i){
+  const st = curStation(); const r = st.readings[i]; if(!r) return;
+  spacingFields(st.array, st.mode).forEach(f=>{ const el=$("fld_"+f.k); if(el) el.value = r[f.k]||""; });
+  $("inpR").value = r.R;
+  editingId = r.id; $("btnAddReading").textContent = "💾 Save changes";
+  window.scrollTo({top:0, behavior:"smooth"});
+  toast("Editing reading — change values, then Save");
+}
+/* ---------------- curve plot ---------------- */
+function setupCanvas(c, h){
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth || 600;
+  c.width = w*dpr; c.height = h*dpr;
+  const ctx = c.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, w, h};
+}
+function drawCurve(target){
+  const c = target || $("curveCanvas");
+  const {ctx, w, h} = setupCanvas(c, 300);
+  const st = curStation();
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = getComputedStyle(document.body).getPropertyValue("--card") || "#fff";
+  if(!st || !st.readings.length){
+    ctx.fillStyle = "#888"; ctx.font = "14px sans-serif"; ctx.textAlign="center";
+    ctx.fillText("No readings yet — log some on the Sounding tab.", w/2, h/2);
+    return;
+  }
+  const padL=52, padR=12, padT=12, padB=34;
+  const flags = flagOutliers(st.readings, st.array, st.mode);
+  let pts = st.readings.map((r,i)=>({
+    x: st.mode==="profiling" ? +r.dist : xValue(st.array, r),
+    y: +r.rho, bad: flags[i]
+  })).filter(p=>p.x>0 && p.y>0 && isFinite(p.y)).sort((a,b)=>a.x-b.x);
+  if(!pts.length) return;
+  const logX = st.mode==="sounding";
+  let xMin=Math.min(...pts.map(p=>p.x)), xMax=Math.max(...pts.map(p=>p.x));
+  let yMin=Math.min(...pts.map(p=>p.y)), yMax=Math.max(...pts.map(p=>p.y));
+  if(logX){ xMin=Math.pow(10,Math.floor(Math.log10(xMin))-0.1); xMax=Math.pow(10,Math.ceil(Math.log10(xMax))+0.1); }
+  else { const dx=(xMax-xMin)||1; xMin-=dx*0.05; xMax+=dx*0.05; }
+  yMin=Math.pow(10,Math.floor(Math.log10(yMin))-0.1); yMax=Math.pow(10,Math.ceil(Math.log10(yMax))+0.1);
+  const X = v => padL + (logX ? (Math.log10(v)-Math.log10(xMin))/(Math.log10(xMax)-Math.log10(xMin))
+                               : (v-xMin)/(xMax-xMin)) * (w-padL-padR);
+  const Y = v => padT + (1-(Math.log10(v)-Math.log10(yMin))/(Math.log10(yMax)-Math.log10(yMin))) * (h-padT-padB);
+  const sun = document.body.classList.contains("sunlight");
+  // gridlines
+  ctx.strokeStyle = sun ? "#999" : "#e3e8ec"; ctx.fillStyle = sun ? "#000" : "#7a8794";
+  ctx.font = "10px sans-serif"; ctx.textAlign="center"; ctx.lineWidth=1;
+  const x0=Math.ceil(Math.log10(xMin)), x1=Math.floor(Math.log10(xMax));
+  if(logX) for(let e=x0;e<=x1;e++){ const x=X(Math.pow(10,e));
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,h-padB); ctx.stroke();
+    ctx.fillText("10^"+e, x, h-padB+14); }
+  else { for(let i=0;i<=5;i++){ const v=xMin+(xMax-xMin)*i/5, x=X(v);
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,h-padB); ctx.stroke();
+    ctx.fillText(fmt(v,1), x, h-padB+14); } }
+  const y0=Math.ceil(Math.log10(yMin)), y1=Math.floor(Math.log10(yMax));
+  ctx.textAlign="right";
+  for(let e=y0;e<=y1;e++){ const y=Y(Math.pow(10,e));
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+    ctx.fillText("10^"+e, padL-6, y+3); }
+  // curve
+  ctx.lineWidth = sun?3:2.5;
+  ctx.strokeStyle = sun ? "#000" : "#0a4d6e";
+  ctx.beginPath();
+  pts.forEach((p,i)=>{ const x=X(p.x), y=Y(p.y); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.stroke();
+  pts.forEach(p=>{
+    const x=X(p.x), y=Y(p.y);
+    ctx.beginPath(); ctx.arc(x,y,sun?6:5,0,7);
+    ctx.fillStyle = p.bad ? "#e74c3c" : (sun?"#000":"#0b6e4f");
+    ctx.fill();
+    if(p.bad){ ctx.lineWidth=2; ctx.strokeStyle="#7b1a12"; ctx.stroke(); }
+  });
+  // axis titles
+  ctx.fillStyle = sun?"#000":"#4a5560"; ctx.textAlign="center"; ctx.font="11px sans-serif";
+  ctx.fillText(st.mode==="profiling" ? "Distance (m)" : (st.array==="wenner"?"a (m)":"AB/2 (m)"), (padL+w-padR)/2, h-6);
+  ctx.save(); ctx.translate(12,(padT+h-padB)/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText("ρₐ (Ω·m)", 0, 0); ctx.restore();
+}
+function renderAI(){
+  const st = curStation();
+  const badge = $("aiBadge"), box = $("aiText");
+  if(!st || st.mode!=="sounding"){ badge.style.display="none"; box.innerHTML="Sounding mode only — the interpreter reads VES curves."; renderPro(); return; }
+  const res = classifyCurve(st.readings, st.array);
+  if(res.badge){ badge.style.display="inline-block"; badge.textContent="🤖 "+res.badge; }
+  else badge.style.display="none";
+  box.innerHTML = res.text;
+  renderPro();
+}
+/* ---------------- map ---------------- */
+function drawMap(){
+  const c = $("mapCanvas");
+  const {ctx, w, h} = setupCanvas(c, 300);
+  ctx.clearRect(0,0,w,h);
+  const tagged = DB.stations.filter(s=>s.lat!=="" && s.lng!=="" && isFinite(+s.lat) && isFinite(+s.lng));
+  const sun = document.body.classList.contains("sunlight");
+  if(!tagged.length){
+    ctx.fillStyle="#888"; ctx.font="14px sans-serif"; ctx.textAlign="center";
+    ctx.fillText("No GPS-tagged stations yet.", w/2, h/2-8);
+    ctx.fillText("Capture GPS on the Station tab.", w/2, h/2+14);
+    return;
+  }
+  const lat0 = tagged.reduce((a,s)=>a+ +s.lat,0)/tagged.length;
+  const kx = 111320*Math.cos(lat0*Math.PI/180), ky = 110540;
+  const pts = tagged.map(s=>({s, x:(+s.lng)*kx, y:(+s.lat)*ky}));
+  let xMin=Math.min(...pts.map(p=>p.x)), xMax=Math.max(...pts.map(p=>p.x));
+  let yMin=Math.min(...pts.map(p=>p.y)), yMax=Math.max(...pts.map(p=>p.y));
+  if(xMax-xMin < 1){ xMin-=5; xMax+=5; } if(yMax-yMin < 1){ yMin-=5; yMax+=5; }
+  const pad=46, sx=(w-2*pad)/(xMax-xMin), sy=(h-2*pad)/(yMax-yMin), sc=Math.min(sx,sy);
+  const X = v => pad + (v-xMin)*sc + ((w-2*pad)-(xMax-xMin)*sc)/2;
+  const Y = v => pad + (1-(v-yMin)/(yMax-yMin))*sy*0 + pad*0 + (h-2*pad) - (v-yMin)*sc - (((h-2*pad)-(yMax-yMin)*sc)/2);
+  // scale bar
+  const metersPerPx = 1/sc;
+  const barM = Math.pow(10, Math.floor(Math.log10(metersPerPx*90)));
+  ctx.strokeStyle = sun?"#000":"#333"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(w-pad-10-barM*sc, h-14); ctx.lineTo(w-pad-10, h-14); ctx.stroke();
+  ctx.fillStyle = sun?"#000":"#333"; ctx.font="11px sans-serif"; ctx.textAlign="right";
+  ctx.fillText(barM>=1000 ? (barM/1000)+" km" : barM+" m", w-pad-10, h-20);
+  ctx.textAlign="left"; ctx.fillText("N ↑", 12, 20);
+  pts.forEach((p,i)=>{
+    const x=X(p.x), y=Y(p.y);
+    const active = p.s.id===DB.currentStationId;
+    ctx.beginPath(); ctx.arc(x,y,active?10:8,0,7);
+    ctx.fillStyle = active ? (sun?"#000":"#0b6e4f") : (sun?"#fff":"#7fb69e");
+    ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle=sun?"#000":"#0b6e4f"; ctx.stroke();
+    ctx.fillStyle = sun?"#000":"#123"; ctx.font="bold 11px sans-serif"; ctx.textAlign="center";
+    ctx.fillText(p.s.name, x, y-14);
+  });
+}
+function renderMapList(){
+  const box = $("stationMapList"); box.innerHTML = "";
+  DB.stations.forEach(st=>{
+    const div = document.createElement("div"); div.className="station-item";
+    const coord = (st.lat!==""&&st.lng!=="") ? `${st.lat}, ${st.lng}` : "no GPS";
+    div.innerHTML = `<div><b>${esc(st.name)}</b><br><span class="meta">${esc(coord)} · ${st.readings.length} readings</span></div>`;
+    if(coord!=="no GPS"){
+      const a = document.createElement("a");
+      a.href = `https://maps.google.com/?q=${encodeURIComponent(st.lat+","+st.lng)}`;
+      a.target = "_blank"; a.rel="noopener";
+      const btn = document.createElement("button"); btn.className="small ghost"; btn.style.width="auto"; btn.textContent="Open in Maps ↗";
+      a.appendChild(btn); div.appendChild(a);
+    }
+    box.appendChild(div);
+  });
+}
+/* ---------------- exports ---------------- */
+function download(name, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+function buildCSV(st){
+  const fields = spacingFields(st.array, st.mode);
+  const head = ["station","array","mode"].concat(fields.map(f=>f.label)).concat(["R_ohm","K","rho_ohm_m"]);
+  const lines = [head.join(",")];
+  st.readings.forEach(r=>{
+    lines.push([st.name, st.array, st.mode].concat(fields.map(f=>r[f.k]??"")).concat([r.R, fmt(r.K,3), fmt(r.rho,3)]).join(","));
+  });
+  return lines.join("\n");
+}
+function buildHTMLReport(st){
+  const fields = spacingFields(st.array, st.mode);
+  // render curve to offscreen canvas for embedding
+  const tmp = document.createElement("canvas");
+  const keepId = tmp.id; tmp.id = "curveCanvas";
+  tmp.style.width = "640px"; tmp.style.height="300px";
+  tmp.style.position="fixed"; tmp.style.left="-9999px";
+  document.body.appendChild(tmp);
+  const real = $("curveCanvas"); real.id = "curveCanvas_real";
+  tmp.id = "curveCanvas";
+  drawCurve(tmp);
+  const img = tmp.toDataURL("image/png");
+  tmp.id = keepId; real.id = "curveCanvas";
+  tmp.remove();
+  const ai = st.mode==="sounding" ? classifyCurve(st.readings, st.array) : null;
+  const pro = st.mode==="sounding" ? proAnalysis(st.readings, st.array, st.mode) : null;
+  const rows = st.readings.map((r,i)=>{
+    const tds = fields.map(f=>`<td>${esc(r[f.k]??"")}</td>`).join("");
+    return `<tr><td>${i+1}</td>${tds}<td>${fmt(r.R,3)}</td><td>${fmt(r.K,2)}</td><td><b>${fmt(r.rho,2)}</b></td></tr>`;
+  }).join("");
+  const ths = fields.map(f=>`<th>${esc(f.label)}</th>`).join("");
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>VES Site Interpreter Pro Report — ${esc(st.name)}</title>
+<style>body{font-family:Arial,sans-serif;margin:40px;color:#111}h1{color:#0b6e4f}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #999;padding:6px;text-align:right}th{background:#e8f0ec}img{max-width:100%}.meta td{text-align:left;border:none;padding:3px 8px 3px 0}.foot{margin-top:30px;font-size:12px;color:#555;border-top:1px solid #ccc;padding-top:10px}</style>
+</head><body>
+<h1>Vertical Electrical Sounding — Field Report</h1>
+<table class="meta">
+<tr><td><b>Project:</b></td><td>${esc(st.project||"—")}</td><td><b>Station:</b></td><td>${esc(st.name)}</td></tr>
+<tr><td><b>Location:</b></td><td>${esc(st.location||"—")}</td><td><b>Date:</b></td><td>${esc(st.date||"—")}</td></tr>
+<tr><td><b>Operator:</b></td><td>${esc(st.operator||"—")}</td><td><b>Array:</b></td><td>${esc(st.array)} (${esc(st.mode)})</td></tr>
+<tr><td><b>GPS:</b></td><td colspan="3">${esc(st.lat||"—")}, ${esc(st.lng||"—")}</td></tr>
+</table>
+${st.siteNotes?`<p><b>Site notes:</b> ${esc(st.siteNotes)}</p>`:""}
+<h2>Data matrix</h2>
+<table><tr><th>#</th>${ths}<th>R (Ω)</th><th>K</th><th>ρₐ (Ω·m)</th></tr>${rows}</table>
+<h2>Apparent resistivity curve</h2>
+<img src="${img}" alt="VES curve">
+${ai&&ai.badge?`<h2>Field interpretation (${esc(ai.badge)})</h2><p>${ai.text}</p>`:""}
+${pro&&pro.verdictCode!=="insufficient"?`<h2>Pro recommendation — ${esc(pro.verdict)}</h2><p><b>Data quality: Grade ${esc(pro.grade)} (${pro.score}/100).</b> ${esc(pro.basis)}</p>${pro.reasons.map(r=>`<p>${esc(r)}</p>`).join("")}<p><b>Depth guidance:</b> ${esc(pro.guidance)}</p><p><i>${esc(pro.disclaimer)}</i></p>`:""}
+${st.photo?`<h2>Site photo</h2><img src="${st.photo}" style="max-width:480px;">`:""}
+<div class="foot">Generated on-device by VES Site Interpreter Pro · Dr. Uche Aluge Daniel.<br>
+Field guidance only: final interpretation requires quantitative inversion modelling with desktop software.</div>
+</body></html>`;
+}
+/* ---------------- voice note & photo ---------------- */
+let mediaRec = null, chunks = [], recStream = null;
+async function startRecording(){
+  const st = curStation(); if(!st){ toast("Create a station first"); return; }
+  try{
+    recStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    chunks = [];
+    mediaRec = new MediaRecorder(recStream);
+    mediaRec.ondataavailable = e => { if(e.data.size) chunks.push(e.data); };
+    mediaRec.onstop = ()=>{
+      const blob = new Blob(chunks, {type: mediaRec.mimeType || "audio/webm"});
+      const rd = new FileReader();
+      rd.onload = ()=>{ st.voiceNote = rd.result; save(); renderStationForm(); toast("Voice note saved ✓"); };
+      rd.readAsDataURL(blob);
+      recStream.getTracks().forEach(t=>t.stop());
+    };
+    mediaRec.start();
+    $("recDot").classList.add("on"); $("recStatus").textContent = "Recording… tap Stop when done";
+    $("btnRec").disabled = true; $("btnStopRec").disabled = false;
+  }catch(e){ toast("⚠ Microphone not available: " + e.message); }
+}
+function stopRecording(){
+  if(mediaRec && mediaRec.state!=="inactive") mediaRec.stop();
+  $("btnRec").disabled = false; $("btnStopRec").disabled = true;
+}
+function handlePhoto(input){
+  const st = curStation(); if(!st){ toast("Create a station first"); return; }
+  const file = input.files[0]; if(!file) return;
+  const img = new Image();
+  img.onload = ()=>{
+    const max = 900, sc = Math.min(1, max/Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    st.photo = c.toDataURL("image/jpeg", 0.72);
+    save(); renderStationForm(); toast("Photo attached ✓");
+    URL.revokeObjectURL(img.src);
+  };
+  img.src = URL.createObjectURL(file);
+  input.value = "";
+}
+/* ---------------- render all & events ---------------- */
+function renderAll(){
+  renderStationList(); renderStationForm();
+  $("inpProject").value = DB.projectName || "";
+  document.body.classList.toggle("sunlight", !!DB.settings.sunlight);
+  $("btnSun").textContent = DB.settings.sunlight ? "🌙 Normal" : "☀️ Field";
+}
+function bindStationInputs(){
+  const st = ()=>curStation();
+  const upd = ()=>{
+    const s = st(); if(!s) return;
+    s.name = $("inpStName").value; s.date = $("inpDate").value;
+    s.location = $("inpLocation").value; s.operator = $("inpOperator").value;
+    s.lat = $("inpLat").value.trim(); s.lng = $("inpLng").value.trim();
+    s.siteNotes = $("taNotes").value; s.project = DB.projectName;
+    save();
+  };
+  ["inpStName","inpDate","inpLocation","inpOperator","inpLat","inpLng","taNotes"].forEach(id=>{
+    $(id).addEventListener("input", upd);
+  });
+  $("inpProject").addEventListener("input", ()=>{ DB.projectName = $("inpProject").value; save(); });
+}
+function init(){
+  load();
+  if(!DB.stations.length){ const s = newStation(); DB.stations.push(s); DB.currentStationId = s.id; save(); }
+  if(!curStation()) DB.currentStationId = DB.stations[0].id;
+  renderAll(); bindStationInputs();
+  document.querySelectorAll("#tabs button").forEach(b=> b.onclick = ()=> switchTab(b.dataset.tab));
+  $("btnSun").onclick = ()=>{ DB.settings.sunlight = !DB.settings.sunlight; save(); renderAll(); };
+  $("btnNewStation").onclick = ()=>{ const s = newStation(); DB.stations.push(s); setStation(s.id); switchTab("station"); };
+  $("selArray").onchange = ()=>{ const st=curStation(); if(st){ st.array=$("selArray").value; save(); renderArrayHint(); renderEntryFields(); } };
+  $("btnModeSounding").onclick = ()=>{ const st=curStation(); if(st){ st.mode="sounding"; save(); setModeUI("sounding"); renderEntryFields(); renderMatrix(); } };
+  $("btnModeProfiling").onclick = ()=>{ const st=curStation(); if(st){ st.mode="profiling"; save(); setModeUI("profiling"); renderEntryFields(); renderMatrix(); } };
+  $("btnAddReading").onclick = addReading;
+  $("btnGPS").onclick = ()=>{
+    if(!navigator.geolocation){ toast("⚠ GPS not available on this device"); return; }
+    $("gpsHint").textContent = "Locating…";
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const st = curStation(); if(!st) return;
+      st.lat = pos.coords.latitude.toFixed(6); st.lng = pos.coords.longitude.toFixed(6);
+      save(); renderStationForm();
+      $("gpsHint").textContent = `✓ GPS locked (±${Math.round(pos.coords.accuracy)} m)`;
+      toast("GPS captured ✓");
+    }, err=>{ $("gpsHint").textContent = "⚠ Could not get GPS: " + err.message; },
+    {enableHighAccuracy:true, timeout:20000});
+  };
+  $("btnRec").onclick = startRecording;
+  $("btnStopRec").onclick = stopRecording;
+  $("btnPlayNote").onclick = ()=>{
+    const st = curStation();
+    if(st && st.voiceNote){ const a = new Audio(st.voiceNote); a.play().catch(()=>toast("⚠ Could not play note")); }
+  };
+  $("btnDelNote").onclick = ()=>{ const st=curStation(); if(st && confirm("Delete voice note?")){ st.voiceNote=null; save(); renderStationForm(); } };
+  $("btnPhoto").onclick = ()=> $("inpPhoto").click();
+  $("inpPhoto").onchange = e => handlePhoto(e.target);
+  $("btnClearPhoto").onclick = ()=>{ const st=curStation(); if(st){ st.photo=null; save(); renderStationForm(); } };
+  $("btnCSV").onclick = ()=>{
+    const st = curStation(); if(!st || !st.readings.length){ toast("No readings to export"); return; }
+    download(st.name+"_ves.csv", buildCSV(st), "text/csv");
+    $("exportStatus").textContent = "✓ CSV downloaded";
+  };
+  $("btnHTML").onclick = ()=>{
+    const st = curStation(); if(!st || !st.readings.length){ toast("No readings to export"); return; }
+    download(st.name+"_ves_report.html", buildHTMLReport(st), "text/html");
+    $("exportStatus").textContent = "✓ Report downloaded — opens in Word";
+  };
+  $("btnJSON").onclick = ()=>{
+    download("ves_backup_"+new Date().toISOString().slice(0,10)+".json", JSON.stringify(DB), "application/json");
+    $("exportStatus").textContent = "✓ Backup downloaded";
+  };
+  $("btnImport").onclick = ()=> $("inpImport").click();
+  $("inpImport").onchange = e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const rd = new FileReader();
+    rd.onload = ()=>{
+      try{
+        const d = JSON.parse(rd.result);
+        if(!d.stations) throw new Error("bad file");
+        DB = Object.assign({projectName:"",stations:[],currentStationId:null,settings:{sunlight:false}}, d);
+        if(!curStation() && DB.stations.length) DB.currentStationId = DB.stations[0].id;
+        save(); renderAll(); toast("Backup restored ✓");
+      }catch(err){ toast("⚠ Could not read that backup file"); }
+    };
+    rd.readAsText(f); e.target.value = "";
+  };
+  $("btnClearStation").onclick = ()=>{
+    const st = curStation();
+    if(st && st.readings.length && confirm(`Delete all ${st.readings.length} readings at ${st.name}?`)){
+      st.readings = []; save(); renderMatrix(); toast("Station readings cleared");
+    }
+  };
+  $("btnClearAll").onclick = ()=>{
+    if(confirm("Delete ALL stations and readings? Export a backup first!")){
+      DB.stations = []; DB.currentStationId = null;
+      const s = newStation(); DB.stations.push(s); DB.currentStationId = s.id;
+      save(); renderAll(); toast("All data deleted");
+    }
+  };
+  window.addEventListener("resize", ()=>{ if($("tab-curve").style.display!=="none") drawCurve(); });
+}
+if(typeof document !== "undefined"){
+  document.addEventListener("DOMContentLoaded", init);
+}
+</script>
+</body>
+</html>
